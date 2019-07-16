@@ -19,12 +19,14 @@ import android.content.pm.PackageManager;
 import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.DisplayMetrics;
 import android.util.Rational;
 import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -35,8 +37,8 @@ import java.io.File;
 public class MainActivity extends AppCompatActivity {
 
     private int REQUEST_CODE_PERMISSIONS = 10; //arbitrary number, can be changed accordingly
-    private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA","android.permission.WRITE_EXTERNAL_STORAGE"};}; //array w/ permissions from manifest
-    TextureView txView;
+    private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA","android.permission.WRITE_EXTERNAL_STORAGE"};
+    private TextureView txView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,11 +58,21 @@ public class MainActivity extends AppCompatActivity {
         //make sure there isn't another camera instance running before starting
         CameraX.unbindAll();
 
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int height = displayMetrics.heightPixels;
+        int square = displayMetrics.widthPixels;
+
+        ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(square,square);
+        txView.setLayoutParams(lp);
+
+
         /* start preview */
-        int aspRatioW = txView.getWidth(); //get width of screen
-        int aspRatioH = txView.getHeight(); //get height
+        int aspRatioW = square; //get width of screen
+        int aspRatioH = square;  //get height
         Rational asp = new Rational (aspRatioW, aspRatioH); //aspect ratio
         Size screen = new Size(aspRatioW, aspRatioH); //size of the screen
+
 
         //config obj for preview/viewfinder thingy.
         PreviewConfig pConfig = new PreviewConfig.Builder().setTargetAspectRatio(asp).setTargetResolution(screen).build();
@@ -74,7 +86,6 @@ public class MainActivity extends AppCompatActivity {
                         ViewGroup parent = (ViewGroup) txView.getParent();
                         parent.removeView(txView);
                         parent.addView(txView, 0);
-
                         txView.setSurfaceTexture(output.getSurfaceTexture());
                         updateTransform();
                     }
@@ -83,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
         /* image capture */
 
         //config obj, selected capture mode
-        ImageCaptureConfig imgCapConfig = new ImageCaptureConfig.Builder().setCaptureMode(ImageCapture.CaptureMode.MIN_LATENCY)
+        ImageCaptureConfig imgCapConfig = new ImageCaptureConfig.Builder().setCaptureMode(ImageCapture.CaptureMode.MIN_LATENCY).setTargetAspectRatio(asp)
                 .setTargetRotation(getWindowManager().getDefaultDisplay().getRotation()).build();
         final ImageCapture imgCap = new ImageCapture(imgCapConfig);
 
